@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>LED Room Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+                  url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><rect fill="%231a1a2e" width="1200" height="800"/><rect fill="%23162447" x="0" y="400" width="1200" height="400"/></svg>');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 30%, rgba(255, 183, 77, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(66, 165, 245, 0.1) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    h1 {
+      font-size: 3rem;
+      color: white;
+      margin-bottom: 40px;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      letter-spacing: 2px;
+      font-weight: 300;
+      z-index: 1;
+    }
+
+    .led-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      padding: 50px 60px;
+      border-radius: 30px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
+                  0 0 0 1px rgba(255, 255, 255, 0.1);
+      width: 400px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      z-index: 1;
+      position: relative;
+    }
+
+    .led-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4),
+                  0 0 0 1px rgba(255, 255, 255, 0.2);
+    }
+
+    .led-card h2 {
+      font-size: 2rem;
+      color: #1a1a2e;
+      margin-bottom: 30px;
+      font-weight: 600;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .status-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 35px 0;
+      gap: 15px;
+    }
+
+    .status-light {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      box-shadow: 0 0 20px currentColor;
+      transition: all 0.3s ease;
+    }
+
+    .status {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      transition: all 0.3s ease;
+    }
+
+    .status.on {
+      color: #4CAF50;
+    }
+
+    .status.on + .status-light {
+      background-color: #4CAF50;
+      box-shadow: 0 0 30px #4CAF50;
+    }
+
+    .status.off {
+      color: #f44336;
+    }
+
+    .status.off + .status-light {
+      background-color: #f44336;
+      box-shadow: 0 0 30px #f44336;
+    }
+
+    .led-card button {
+      padding: 18px 50px;
+      border: none;
+      border-radius: 50px;
+      color: white;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: 600;
+      width: 100%;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .led-card button::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .led-card button:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .led-card button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .led-card button:active {
+      transform: translateY(0);
+    }
+
+    .btn-on {
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    }
+
+    .btn-off {
+      background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+    }
+
+    #logoutBtn {
+      position: fixed;
+      top: 30px;
+      right: 30px;
+      padding: 12px 30px;
+      font-size: 1rem;
+      border: 2px solid white;
+      border-radius: 50px;
+      cursor: pointer;
+      color: white;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      font-weight: 600;
+      z-index: 100;
+      letter-spacing: 1px;
+    }
+
+    #logoutBtn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    #dashboard {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      z-index: 1;
+    }
+
+    #loginForm {
+      max-width: 450px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      padding: 60px 50px;
+      border-radius: 30px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
+                  0 0 0 1px rgba(255, 255, 255, 0.1);
+      z-index: 1;
+    }
+
+    #loginForm h2 {
+      margin-bottom: 35px;
+      color: #1a1a2e;
+      font-size: 2.2rem;
+      font-weight: 600;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    #loginForm input {
+      width: 100%;
+      padding: 16px 20px;
+      margin: 12px 0 20px;
+      font-size: 1.05rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 15px;
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    #loginForm input:focus {
+      border-color: #2196F3;
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.1);
+    }
+
+    #loginForm button {
+      width: 100%;
+      background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+      color: white;
+      padding: 16px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 0 10px 30px rgba(33, 150, 243, 0.3);
+    }
+
+    #loginForm button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(33, 150, 243, 0.4);
+    }
+
+    #loginForm button:active {
+      transform: translateY(0);
+    }
+
+    footer {
+      position: fixed;
+      bottom: 20px;
+      font-size: 1rem;
+      color: rgba(255, 255, 255, 0.7);
+      z-index: 1;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      letter-spacing: 1px;
+    }
+
+    /* Decorative elements */
+    .deco-circle {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .deco-circle-1 {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(255, 183, 77, 0.15) 0%, transparent 70%);
+      top: -100px;
+      left: -100px;
+      animation: float 20s ease-in-out infinite;
+    }
+
+    .deco-circle-2 {
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(66, 165, 245, 0.15) 0%, transparent 70%);
+      bottom: -80px;
+      right: -80px;
+      animation: float 25s ease-in-out infinite reverse;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(30px, 30px) scale(1.1); }
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+      
+      .led-card {
+        width: 90%;
+        padding: 40px 30px;
+      }
+
+      #loginForm {
+        width: 90%;
+        padding: 40px 30px;
+      }
+
+      #logoutBtn {
+        top: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="deco-circle deco-circle-1"></div>
+  <div class="deco-circle deco-circle-2"></div>
+
+  <!-- Login form -->
+  <div id="loginForm">
+    <h2>🏠 LED Room Control</h2>
+    <input type="email" id="email" placeholder="Enter Email" required />
+    <input type="password" id="password" placeholder="Enter Password" required />
+    <button id="loginBtn">Login</button>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard">
+    <h1>💡 LED CONTROL</h1>
+    <div class="led-card">
+      <h2>Living Room LED</h2>
+      <div class="status-container">
+        <div class="status off" id="status1">OFF</div>
+        <div class="status-light"></div>
+      </div>
+      <button class="btn-off" id="btn1">Turn ON</button>
+    </div>
+    <button id="logoutBtn">Logout</button>
+  </div>
+
+  <footer>
+    Created by Tech StudyCell
+  </footer>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyADo5wyzjDa4-EPrltkqKAl5XkaE61b2U0",
+      authDomain: "miniproject0217-9d777.firebaseapp.com",
+      databaseURL: "https://miniproject0217-9d777-default-rtdb.firebaseio.com",
+      projectId: "miniproject0217-9d777",
+      storageBucket: "miniproject0217-9d777.firebasestorage.app",
+      messagingSenderId: "765735848587",
+      appId: "1:765735848587:web:e90d2db268b662bee0628e"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    // Predefined login credentials
+    const allowedEmail = "fxnggorr2009@gmail.com";
+    const allowedPassword = "miniproject0217";
+
+    const loginForm = document.getElementById("loginForm");
+    const dashboard = document.getElementById("dashboard");
+    const loginBtn = document.getElementById("loginBtn");
+
+    loginBtn.addEventListener("click", () => {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!email || !password) {
+        alert("Please enter email and password.");
+        return;
+      }
+
+      // Check hardcoded credentials first
+      if(email === allowedEmail && password === allowedPassword){
+        // Sign in with Firebase
+        firebase.auth().signInWithEmailAndPassword(email, password)
+          .then(userCredential => {
+            console.log("Signed in as", userCredential.user.email);
+            loginForm.style.display = "none";
+            dashboard.style.display = "flex";
+            startRelayControl();
+          })
+          .catch(error => {
+            alert("Firebase login failed: " + error.message);
+          });
+      } else {
+        alert("Invalid email or password.");
+      }
+    });
+
+    function startRelayControl() {
+      const db = firebase.database();
+      const statusText = document.getElementById("status1");
+      const toggleButton = document.getElementById("btn1");
+      const relayRef = db.ref("/led1");
+
+      // Listen for changes from Firebase
+      relayRef.on("value", (snapshot) => {
+        const state = snapshot.val();
+        
+        if (state) {
+          // LED is ON
+          statusText.innerText = "ON";
+          statusText.className = "status on";
+          toggleButton.innerText = "Turn OFF";
+          toggleButton.className = "btn-on";
+        } else {
+          // LED is OFF
+          statusText.innerText = "OFF";
+          statusText.className = "status off";
+          toggleButton.innerText = "Turn ON";
+          toggleButton.className = "btn-off";
+        }
+      });
+
+      // Toggle button click
+      toggleButton.onclick = () => {
+        relayRef.get().then(snap => {
+          const currentState = snap.val();
+          relayRef.set(!currentState);
+        });
+      };
+    }
+
+    document.getElementById("logoutBtn").onclick = () => {
+      firebase.auth().signOut()
+        .then(() => {
+          dashboard.style.display = "none";
+          loginForm.style.display = "block";
+          document.getElementById("email").value = "";
+          document.getElementById("password").value = "";
+        })
+        .catch(error => {
+          alert("Logout failed: " + error.message);
+        });
+    };
+  </script>
+</body>
+</html>
